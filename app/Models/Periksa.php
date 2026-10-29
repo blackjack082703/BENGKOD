@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Periksa extends Model
 {
+    public const BIAYA_JASA = 150000;
+
     protected $table = 'periksa';
 
     protected $fillable = [

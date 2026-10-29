@@ -3,14 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Poli;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class AdminPoliController extends Controller
 {
     public function index()
     {
         $polis = Poli::all();
+
         return view('admin.polis.index', compact('polis'));
     }
 
@@ -27,12 +29,14 @@ class AdminPoliController extends Controller
         ]);
 
         Poli::create($validated);
+
         return redirect()->route('polis.index')->with('success', 'Poli berhasil di tambahkan')->with('type', 'success');
     }
 
     public function edit(string $id)
     {
         $poli = Poli::findOrFail($id);
+
         return view('admin.polis.edit', compact('poli'));
     }
 
@@ -45,13 +49,21 @@ class AdminPoliController extends Controller
 
         $poli = Poli::findOrFail($id);
         $poli->update($validated);
+
         return redirect()->route('polis.index')->with('success', 'Polis berhasil di update');
     }
 
-    public function destroy(string $id)
+    public function destroy(string $id): RedirectResponse
     {
         $poli = Poli::findOrFail($id);
+
+        if ($poli->dokters()->exists()) {
+            return redirect()->route('polis.index')
+                ->with('error', 'Poli tidak dapat dihapus karena masih digunakan oleh dokter atau pengguna lain.');
+        }
+
         $poli->delete();
+
         return redirect()->route('polis.index')->with('success', 'Polis Berhasil di hapus !');
     }
 }

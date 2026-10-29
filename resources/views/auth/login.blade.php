@@ -22,7 +22,11 @@
             @if ($errors->any())
             <div class="alert alert-error mb-5 rounded-xl text-[0.83rem]">
                 <i class="fas fa-circle-xmark"></i>
-                <span>{{ $errors->first() }}</span>
+                <ul>
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
             </div>
             @endif
 
@@ -43,7 +47,7 @@
                     <label class="input input-bordered flex items-center gap-3 rounded-[10px] border-slate-200 bg-slate-50">
                         <i class="fas fa-envelope text-slate-400 text-[0.82rem]"></i>
 
-                        <input type="email" name="email" value="{{ old('email') }}" placeholder="Masukkan email..."
+                        <input type="email" name="email" value="{{ is_string(old('email')) ? old('email') : '' }}" placeholder="Masukkan email..."
                             class="grow bg-transparent text-slate-800 text-[0.88rem]" required>
                     </label>
 

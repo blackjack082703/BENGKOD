@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,9 +14,19 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
-    public function login(Request $request)
+    public function login(Request $request): RedirectResponse
     {
-        $credentials = $request->only('email', 'password');
+        $credentials = $request->validate([
+            'email' => 'bail|required|string|max:255|email',
+            'password' => 'bail|required|string',
+        ], [
+            'email.required' => 'Email wajib diisi.',
+            'email.string' => 'Email harus berupa teks.',
+            'email.email' => 'Format email tidak valid.',
+            'email.max' => 'Email maksimal 255 karakter.',
+            'password.required' => 'Password wajib diisi.',
+            'password.string' => 'Password harus berupa teks.',
+        ]);
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
@@ -28,7 +39,9 @@ class AuthController extends Controller
             }
         }
 
-        return back()->withErrors(['email', 'Email atau password salah']);
+        return back()->withErrors([
+            'email' => 'Email atau password salah',
+        ])->withInput($request->only('email'));
     }
 
     public function showRegister()

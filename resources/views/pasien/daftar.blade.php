@@ -31,7 +31,6 @@
 
                     <form action="{{ route('pasien.daftar.submit') }}" method="POST">
                         @csrf
-                        <input type="hidden" name="id_pasien" value="{{ $user->id }}">
 
                         {{-- Nomor RM --}}
                         <div class="mb-4">
@@ -49,7 +48,7 @@
                                 Pilih Poli
                             </label>
 
-                            <select name="id_poli" id="poliSelect" class="w-full border-2 rounded-lg p-2">
+                            <select name="id_poli" id="poliSelect" class="w-full border-2 rounded-lg p-2" required>
                                 <option value="">-- Pilih Poli --</option>
                                 @foreach ($polis as $poli)
                                 <option value="{{ $poli->id }}">
@@ -66,7 +65,7 @@
                                 Pilih Jadwal Periksa
                             </label>
 
-                            <select name="id_jadwal" id="jadwalSelect" class="w-full border-2 rounded-lg p-2">
+                            <select name="id_jadwal" id="jadwalSelect" class="w-full border-2 rounded-lg p-2" required disabled>
                                 <option value="">-- Pilih Jadwal --</option>
 
                                 @foreach ($jadwals as $jadwal)
@@ -85,8 +84,8 @@
                             <label class="font-semibold block mb-1">
                                 Keluhan
                             </label>
-                            <textarea name="keluhan" rows="3" class="w-full border-2 rounded-lg p-2"
-                                placeholder="Tulis keluhan anda..."></textarea>
+                            <textarea name="keluhan" rows="3" class="w-full border-2 rounded-lg p-2" required
+                                placeholder="Tulis keluhan anda...">{{ is_string(old('keluhan')) ? old('keluhan') : '' }}</textarea>
                         </div>
 
                         <div class="flex justify-end">
@@ -104,28 +103,32 @@
 
     @push('scripts')
     <script>
-        document.addEventListener("DOMContentLoaded", function(){
+        document.addEventListener("DOMContentLoaded", function () {
+            const poliSelect = document.getElementById("poliSelect");
+            const jadwalSelect = document.getElementById("jadwalSelect");
+            const jadwalOptions = Array.from(jadwalSelect.options);
 
-    const poliSelect = document.getElementById("poliSelect")
-    const jadwalSelect = document.getElementById("jadwalSelect")
-    const jadwalOptions = jadwalSelect.querySelectorAll("option")
+            function filterJadwal() {
+                const poliId = poliSelect.value;
+                const selectedJadwal = jadwalSelect.value;
+                const matchingOptions = jadwalOptions.filter(option =>
+                    option.value === "" || option.dataset.poli === poliId
+                );
 
-    poliSelect.addEventListener("change", function(){
-        let poliId = this.value
-        jadwalOptions.forEach(option => {
-            if(option.value === ""){
-                option.style.display = "block"
-                return
+                jadwalSelect.replaceChildren(...matchingOptions);
+                jadwalSelect.disabled = poliId === "";
+                jadwalSelect.value = matchingOptions.some(option => option.value === selectedJadwal)
+                    ? selectedJadwal
+                    : "";
             }
-            if(option.dataset.poli === poliId){
-                option.style.display = "block"
-            }else{
-                option.style.display = "none"
-            }
-        })
-        jadwalSelect.value = ""
-    })
-        })
+
+            poliSelect.addEventListener("change", function () {
+                jadwalSelect.value = "";
+                filterJadwal();
+            });
+
+            filterJadwal();
+        });
     </script>
     @endpush
 </x-layouts.app>

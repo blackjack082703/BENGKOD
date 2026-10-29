@@ -5,34 +5,38 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Poli;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\View\View;
 
 class DokterController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $dokters = User::where('role', 'dokter')->with('poli')->get();
+
         return view('admin.dokter.index', compact('dokters'));
     }
 
-    public function create()
+    public function create(): View
     {
         $polis = Poli::all();
+
         return view('admin.dokter.create', compact('polis'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'nama' => 'required|string|max:255',
             'alamat' => 'required|string',
             'no_ktp' => 'required|string|max:16|unique:users,no_ktp',
             'no_hp' => 'required|string|max:15',
-            'id_poli' => 'required|string|exists:poli,id',
-            'email' => 'required|string|unique:users,email',
+            'id_poli' => 'required|integer|exists:poli,id',
+            'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:6',
-        ]);
+        ], ['email.email' => 'Format email tidak valid.']);
 
         User::create([
             'nama' => $request->nama,
@@ -50,23 +54,26 @@ class DokterController extends Controller
             ->with('type', 'success');
     }
 
-    public function edit(User $dokter)
+    public function edit(User $dokter): View
     {
+        abort_unless($dokter->role === 'dokter', 404);
         $polis = Poli::all();
+
         return view('admin.dokter.edit', compact('dokter', 'polis'));
     }
 
-    public function update(Request $request, User $dokter)
+    public function update(Request $request, User $dokter): RedirectResponse
     {
+        abort_unless($dokter->role === 'dokter', 404);
         $request->validate([
             'nama' => 'required|string|max:255',
             'alamat' => 'required|string',
-            'no_ktp' => 'required|string|max:16|unique:users,no_ktp,' . $dokter->id,
+            'no_ktp' => 'required|string|max:16|unique:users,no_ktp,'.$dokter->id,
             'no_hp' => 'required|string|max:15',
-            'id_poli' => 'required|string|exists:poli,id',
-            'email' => 'required|string|unique:users,email,' . $dokter->id,
+            'id_poli' => 'required|integer|exists:poli,id',
+            'email' => 'required|string|email|max:255|unique:users,email,'.$dokter->id,
             'password' => 'nullable|string|min:6',
-        ]);
+        ], ['email.email' => 'Format email tidak valid.']);
 
         $updateData = [
             'nama' => $request->nama,
@@ -88,8 +95,15 @@ class DokterController extends Controller
             ->with('type', 'success');
     }
 
-    public function destroy(User $dokter)
+    public function destroy(User $dokter): RedirectResponse
     {
+        abort_unless($dokter->role === 'dokter', 404);
+
+        if ($dokter->jadwalPeriksas()->exists() || $dokter->daftarPolis()->exists()) {
+            return redirect()->route('dokter.index')
+                ->with('error', 'Dokter tidak dapat dihapus karena masih memiliki jadwal atau pendaftaran pasien.');
+        }
+
         $dokter->delete();
 
         return redirect()->route('dokter.index')

@@ -55,20 +55,23 @@ class PasienController extends Controller
         return redirect()->route('pasien.index')->with('success', 'Pasien berhasil ditambahkan.');
     }
 
-    public function edit(User $pasien)
+    public function edit(User $pasien): View
     {
+        abort_unless($pasien->role === 'pasien', 404);
+
         return view('admin.pasien.edit', compact('pasien'));
     }
 
-    public function update(Request $request, User $pasien)
+    public function update(Request $request, User $pasien): RedirectResponse
     {
+        abort_unless($pasien->role === 'pasien', 404);
         $request->validate([
             'nama' => 'required|string|max:255',
             'alamat' => 'required|string',
             'no_ktp' => 'required|string|max:16|unique:users,no_ktp,'.$pasien->id,
             'no_hp' => 'required|string|max:15',
             'email' => 'required|string|email|unique:users,email,'.$pasien->id,
-            'password' => 'required|string|min:6',
+            'password' => 'nullable|string|min:6',
         ]);
 
         $updateData = [
@@ -87,12 +90,19 @@ class PasienController extends Controller
 
         return redirect()
             ->route('pasien.index')
-            ->with('message', 'Data Pasien berhasil di Ubah>')
+            ->with('message', 'Data Pasien berhasil diubah')
             ->with('type', 'success');
     }
 
-    public function destroy(User $pasien)
+    public function destroy(User $pasien): RedirectResponse
     {
+        abort_unless($pasien->role === 'pasien', 404);
+
+        if ($pasien->daftarPolis()->exists()) {
+            return redirect()->route('pasien.index')
+                ->with('error', 'Pasien tidak dapat dihapus karena sudah memiliki pendaftaran atau riwayat pemeriksaan.');
+        }
+
         $pasien->delete();
 
         return redirect()
